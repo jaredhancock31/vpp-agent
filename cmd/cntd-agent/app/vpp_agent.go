@@ -20,9 +20,7 @@ import (
 	"go.ligato.io/cn-infra/v2/datasync/kvdbsync/local"
 	"go.ligato.io/cn-infra/v2/datasync/msgsync"
 	"go.ligato.io/cn-infra/v2/datasync/resync"
-	"go.ligato.io/cn-infra/v2/db/keyval/consul"
-	"go.ligato.io/cn-infra/v2/db/keyval/etcd"
-	"go.ligato.io/cn-infra/v2/db/keyval/redis"
+	"go.ligato.io/cn-infra/v2/db/keyval/bolt"
 	"go.ligato.io/cn-infra/v2/health/probe"
 	"go.ligato.io/cn-infra/v2/health/statuscheck"
 	"go.ligato.io/cn-infra/v2/infra"
@@ -34,7 +32,6 @@ import (
 	linux_iptablesplugin "go.ligato.io/vpp-agent/v3/plugins/linux/iptablesplugin"
 	linux_l3plugin "go.ligato.io/vpp-agent/v3/plugins/linux/l3plugin"
 	linux_nsplugin "go.ligato.io/vpp-agent/v3/plugins/linux/nsplugin"
-	"go.ligato.io/vpp-agent/v3/plugins/netalloc"
 	"go.ligato.io/vpp-agent/v3/plugins/orchestrator"
 	"go.ligato.io/vpp-agent/v3/plugins/restapi"
 	"go.ligato.io/vpp-agent/v3/plugins/telemetry"
@@ -62,13 +59,10 @@ type VPPAgent struct {
 	// before orchestrator that starts watch for their NB key prefixes.
 	VPP
 	Linux
-	Netalloc *netalloc.Plugin
 
 	Orchestrator *orchestrator.Plugin
 
-	ETCDDataSync   *kvdbsync.Plugin
-	ConsulDataSync *kvdbsync.Plugin
-	RedisDataSync  *kvdbsync.Plugin
+	BoltDataSync *kvdbsync.Plugin
 
 	Configurator *configurator.Plugin
 	RESTAPI      *restapi.Plugin
@@ -79,14 +73,10 @@ type VPPAgent struct {
 
 // New creates new VPPAgent instance.
 func New() *VPPAgent {
-	etcdDataSync := kvdbsync.NewPlugin(kvdbsync.UseKV(&etcd.DefaultPlugin))
-	consulDataSync := kvdbsync.NewPlugin(kvdbsync.UseKV(&consul.DefaultPlugin))
-	redisDataSync := kvdbsync.NewPlugin(kvdbsync.UseKV(&redis.DefaultPlugin))
+	boltDataSync := kvdbsync.NewPlugin(kvdbsync.UseKV(&bolt.DefaultPlugin))
 
 	writers := datasync.KVProtoWriters{
-		etcdDataSync,
-		consulDataSync,
-		redisDataSync,
+		boltDataSync,
 	}
 	statuscheck.DefaultPlugin.Transport = writers
 
@@ -100,9 +90,7 @@ func New() *VPPAgent {
 	// Set watcher for KVScheduler.
 	watchers := datasync.KVProtoWatchers{
 		local.DefaultRegistry,
-		etcdDataSync,
-		consulDataSync,
-		redisDataSync,
+		boltDataSync,
 	}
 	orchestrator.DefaultPlugin.Watcher = watchers
 	orchestrator.DefaultPlugin.StatusPublisher = writers
@@ -115,9 +103,7 @@ func New() *VPPAgent {
 	// No stats publishers by default, use `vpp-ifplugin.conf` config
 	// ifplugin.DefaultPlugin.PublishStatistics = writers
 	ifplugin.DefaultPlugin.DataSyncs = map[string]datasync.KeyProtoValWriter{
-		"etcd":   etcdDataSync,
-		"redis":  redisDataSync,
-		"consul": consulDataSync,
+		"bolt": boltDataSync,
 	}
 
 	// connect IfPlugins for Linux & VPP
@@ -129,20 +115,17 @@ func New() *VPPAgent {
 	linux := DefaultLinux()
 
 	return &VPPAgent{
-		PluginName:     "VPPAgent",
-		LogManager:     &logmanager.DefaultPlugin,
-		Orchestrator:   &orchestrator.DefaultPlugin,
-		ETCDDataSync:   etcdDataSync,
-		ConsulDataSync: consulDataSync,
-		RedisDataSync:  redisDataSync,
-		VPP:            vpp,
-		Linux:          linux,
-		Netalloc:       &netalloc.DefaultPlugin,
-		Configurator:   &configurator.DefaultPlugin,
-		RESTAPI:        &restapi.DefaultPlugin,
-		Probe:          &probe.DefaultPlugin,
-		StatusCheck:    &statuscheck.DefaultPlugin,
-		Telemetry:      &telemetry.DefaultPlugin,
+		PluginName:   "VPPAgent",
+		LogManager:   &logmanager.DefaultPlugin,
+		Orchestrator: &orchestrator.DefaultPlugin,
+		BoltDataSync: boltDataSync,
+		VPP:          vpp,
+		Linux:        linux,
+		Configurator: &configurator.DefaultPlugin,
+		RESTAPI:      &restapi.DefaultPlugin,
+		Probe:        &probe.DefaultPlugin,
+		StatusCheck:  &statuscheck.DefaultPlugin,
+		Telemetry:    &telemetry.DefaultPlugin,
 	}
 }
 
