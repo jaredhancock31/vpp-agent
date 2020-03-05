@@ -88,18 +88,21 @@ agentctl: ## Build agentctl
 install: ## Install commands
 	@echo "# installing ${VERSION}"
 	go install -ldflags "${LDFLAGS}" -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS} ./cmd/vpp-agent
+	go install -ldflags "${LDFLAGS}" -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS} ./cmd/cntd-agent
 	go install -ldflags "${LDFLAGS}" -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS} ./cmd/vpp-agent-init
 	go install -ldflags "${LDFLAGS}" -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS} ./cmd/agentctl
 
 cmd: ## Build commands
 	@echo "# building ${VERSION}"
 	cd cmd/vpp-agent && go build -ldflags "${LDFLAGS}" -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
+	cd cmd/cntd-agent && go build -ldflags "${LDFLAGS}" -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
 	cd cmd/vpp-agent-init && go build -ldflags "${LDFLAGS}" -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
 	cd cmd/agentctl && go build -ldflags "${LDFLAGS}" -tags="${GO_BUILD_TAGS}" ${GO_BUILD_ARGS}
 
 clean-cmd: ## Clean commands
 	@echo "# cleaning command binaries"
 	rm -f ./cmd/vpp-agent/vpp-agent
+	rm -f ./cmd/cntd-agent/cntd-agent
 	rm -f ./cmd/vpp-agent/vpp-agent-init
 	rm -f ./cmd/agentctl/agentctl
 
