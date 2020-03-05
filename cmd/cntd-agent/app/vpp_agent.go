@@ -18,14 +18,12 @@ import (
 	"go.ligato.io/cn-infra/v2/datasync"
 	"go.ligato.io/cn-infra/v2/datasync/kvdbsync"
 	"go.ligato.io/cn-infra/v2/datasync/kvdbsync/local"
-	"go.ligato.io/cn-infra/v2/datasync/msgsync"
 	"go.ligato.io/cn-infra/v2/datasync/resync"
 	"go.ligato.io/cn-infra/v2/db/keyval/bolt"
 	"go.ligato.io/cn-infra/v2/health/probe"
 	"go.ligato.io/cn-infra/v2/health/statuscheck"
 	"go.ligato.io/cn-infra/v2/infra"
 	"go.ligato.io/cn-infra/v2/logging/logmanager"
-	"go.ligato.io/cn-infra/v2/messaging/kafka"
 
 	"go.ligato.io/vpp-agent/v3/plugins/configurator"
 	linux_ifplugin "go.ligato.io/vpp-agent/v3/plugins/linux/ifplugin"
@@ -80,13 +78,6 @@ func New() *VPPAgent {
 	}
 	statuscheck.DefaultPlugin.Transport = writers
 
-	ifStatePub := msgsync.NewPlugin(
-		msgsync.UseMessaging(&kafka.DefaultPlugin),
-		msgsync.UseConf(msgsync.Config{
-			Topic: "if_state",
-		}),
-	)
-
 	// Set watcher for KVScheduler.
 	watchers := datasync.KVProtoWatchers{
 		local.DefaultRegistry,
@@ -94,14 +85,12 @@ func New() *VPPAgent {
 	}
 	orchestrator.DefaultPlugin.Watcher = watchers
 	orchestrator.DefaultPlugin.StatusPublisher = writers
-	orchestrator.EnabledGrpcMetrics()
 
 	ifplugin.DefaultPlugin.Watcher = watchers
-	ifplugin.DefaultPlugin.NotifyStates = ifStatePub
 	puntplugin.DefaultPlugin.PublishState = writers
 
 	// No stats publishers by default, use `vpp-ifplugin.conf` config
-	// ifplugin.DefaultPlugin.PublishStatistics = writers
+	ifplugin.DefaultPlugin.PublishStatistics = writers
 	ifplugin.DefaultPlugin.DataSyncs = map[string]datasync.KeyProtoValWriter{
 		"bolt": boltDataSync,
 	}
