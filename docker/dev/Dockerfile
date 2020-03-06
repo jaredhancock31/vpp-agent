@@ -77,6 +77,7 @@ RUN go get -u github.com/go-delve/delve/cmd/dlv && dlv version
 # Copy configs
 COPY \
     ./docker/dev/etcd.conf \
+    ./docker/dev/bolt.conf \
     ./docker/dev/grpc.conf \
     ./docker/dev/logs.conf \
     ./docker/dev/vpp-ifplugin.conf \
@@ -104,4 +105,4 @@ ENV SUPERVISOR_CONFIG=/opt/vpp-agent/dev/supervisor.conf
 
 CMD rm -f /dev/shm/db /dev/shm/global_vm /dev/shm/vpe-api && \
 	mkdir -p /run/vpp && \
-	exec vpp-agent-init
+	exec cntd-agent --bolt-config=bolt.conf

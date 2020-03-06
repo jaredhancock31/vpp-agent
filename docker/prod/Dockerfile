@@ -40,6 +40,7 @@ COPY \
 	etcd.conf \
 	grpc.conf \
 	supervisor.conf \
+	bolt.conf \
  /opt/vpp-agent/dev/
 
 COPY vpp.conf /etc/vpp/vpp.conf
