@@ -105,5 +105,7 @@ ENV SUPERVISOR_CONFIG=/opt/vpp-agent/dev/supervisor.conf
 
 CMD rm -f /dev/shm/db /dev/shm/global_vm /dev/shm/vpe-api && \
 	mkdir -p /run/vpp && \
-	/usr/bin/vpp -c /etc/vpp/vpp.conf && \
+	echo "starting vpp" && \
+	/usr/bin/vpp -c /etc/vpp/vpp.conf & \
+	echo "starting cntd-agent" && \
 	exec cntd-agent --bolt-config=/opt/vpp-agent/dev/bolt.conf

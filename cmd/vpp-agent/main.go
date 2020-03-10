@@ -69,7 +69,7 @@ func parseVersion() {
 func main() {
 	parseVersion()
 	fmt.Fprintf(os.Stderr, logo, version.App(), version.Version(), version.BuiltOn(), version.BuiltBy())
-
+	fmt.Fprintf(os.Stderr, "VPP AGENT")
 	if debug.IsEnabled() {
 		logging.DefaultLogger.SetLevel(logging.DebugLevel)
 		logging.DefaultLogger.Debug("DEBUG ENABLED")
