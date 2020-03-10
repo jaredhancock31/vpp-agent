@@ -9,8 +9,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 		iproute2 \
 		iputils-ping \
 		curl \
-		netstat \
-		nvim \
 		# vpp requirements
 		ca-certificates \
 		libapr1 \
