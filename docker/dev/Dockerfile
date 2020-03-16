@@ -108,4 +108,4 @@ CMD rm -f /dev/shm/db /dev/shm/global_vm /dev/shm/vpe-api && \
 	echo "starting vpp" && \
 	/usr/bin/vpp -c /etc/vpp/vpp.conf & \
 	echo "starting cntd-agent" && \
-	exec cntd-agent --bolt-config=/opt/vpp-agent/dev/bolt.conf
+	exec cntd-agent --grpc-config=/opt/vpp-agent/dev/grpc.conf --bolt-config=/opt/vpp-agent/dev/bolt.conf
