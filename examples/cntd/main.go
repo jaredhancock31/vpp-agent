@@ -2,14 +2,11 @@ package cntd
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"net"
 	"sync"
 	"time"
 
-	"github.com/golang/protobuf/jsonpb"
-	"github.com/golang/protobuf/proto"
 	"github.com/namsral/flag"
 	"go.ligato.io/cn-infra/v2/agent"
 	"go.ligato.io/cn-infra/v2/infra"
@@ -19,13 +16,8 @@ import (
 	"go.ligato.io/vpp-agent/v3/proto/ligato/configurator"
 	"go.ligato.io/vpp-agent/v3/proto/ligato/linux"
 	linux_intf "go.ligato.io/vpp-agent/v3/proto/ligato/linux/interfaces"
-	namespaces "go.ligato.io/vpp-agent/v3/proto/ligato/linux/namespace"
 	"go.ligato.io/vpp-agent/v3/proto/ligato/vpp"
-	interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
-	vpp_ipsec "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/ipsec"
-	vpp_l3 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l3"
 	vpp_intf "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
-	vpp_l2 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l2"
 )
 
 
@@ -75,7 +67,7 @@ const (
 var exampleFinished = make(chan struct{})
 var (
 	timeout = flag.Int("timeout", 20, "Timeout between applying of initial and modified configuration in seconds")
-	address    = flag.String("address", "172.17.0.2:9111", "address of GRPC server")
+	address    = flag.String("address", "172.17.0.1:9111", "address of GRPC server")
 	socketType = flag.String("socket-type", "tcp", "socket type [tcp, tcp4, tcp6, unix, unixpacket]")
 
 	dialTimeout = time.Second * 2
