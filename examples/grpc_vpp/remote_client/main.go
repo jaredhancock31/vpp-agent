@@ -33,9 +33,9 @@ import (
 	"go.ligato.io/vpp-agent/v3/proto/ligato/configurator"
 	"go.ligato.io/vpp-agent/v3/proto/ligato/linux"
 	linux_interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/linux/interfaces"
+	namespaces "go.ligato.io/vpp-agent/v3/proto/ligato/linux/namespace"
 	"go.ligato.io/vpp-agent/v3/proto/ligato/vpp"
 	interfaces "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
-	vpp_ipsec "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/ipsec"
 	vpp_l3 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l3"
 )
 
@@ -127,9 +127,9 @@ func (p *ExamplePlugin) demonstrateClient(client configurator.ConfiguratorServic
 			Interfaces: []*interfaces.Interface{
 				memif1,
 			},
-			IpscanNeighbor: ipScanNeigh,
-			IpsecSas:       []*vpp_ipsec.SecurityAssociation{sa10},
-			IpsecSpds:      []*vpp_ipsec.SecurityPolicyDatabase{spd1},
+			//IpscanNeighbor: ipScanNeigh,
+			//IpsecSas:       []*vpp_ipsec.SecurityAssociation{sa10},
+			//IpsecSpds:      []*vpp_ipsec.SecurityPolicyDatabase{spd1},
 		},
 		LinuxConfig: &linux.ConfigData{
 			Interfaces: []*linux_interfaces.Interface{
@@ -204,28 +204,88 @@ func dialer(socket, address string, timeoutVal time.Duration) func(string, time.
 	}
 }
 
+const (
+	bdNetPrefix = "10.11.1."
+	bdNetMask   = "/24"
+
+	veth1LogicalName = "myVETH1"
+	veth1HostName    = "veth1"
+	veth1IPAddr      = bdNetPrefix + "1"
+	veth1HwAddr      = "66:66:66:66:66:66"
+
+	veth2LogicalName = "myVETH2"
+	veth2HostName    = "veth2"
+
+	afPacketLogicalName = "myAFPacket"
+	afPacketHwAddr      = "a7:35:45:55:65:75"
+
+	vppTapLogicalName = "myVPPTap"
+	vppTapHwAddr      = "b3:12:12:45:A7:B7"
+	vppTapVersion     = 2
+
+	linuxTapLogicalName = "myLinuxTAP"
+	linuxTapHostName    = "tap_to_vpp"
+	linuxTapIPAddr      = bdNetPrefix + "2"
+	linuxTapHwAddr      = "88:88:88:88:88:88"
+
+	mycroservice1 = "microservice1"
+	mycroservice2 = "microservice2"
+
+	bviLoopName   = "myLoopback1"
+	bviLoopIP     = bdNetPrefix + "3"
+	bviLoopHwAddr = "cd:cd:cd:cd:cd:cd"
+
+	loop2Name   = "myLoopback2"
+	loop2HwAddr = "ef:ef:ef:ef:ef:ef"
+
+	bdName                = "myBridgeDomain"
+	bdFlood               = true
+	bdUnknownUnicastFlood = true
+	bdForward             = true
+	bdLearn               = false /* Learning turned off, FIBs are needed for connectivity */
+	bdArpTermination      = true
+	bdMacAge              = 0
+)
+
 var (
-	sa10 = &vpp.IPSecSA{
-		Index:     "10",
-		Spi:       1001,
-		Protocol:  1,
-		CryptoAlg: 1,
-		CryptoKey: "4a506a794f574265564551694d653768",
-		IntegAlg:  2,
-		IntegKey:  "4339314b55523947594d6d3547666b45764e6a58",
+
+	//
+	/**
+	1. create namespaces
+	2. create veth interfaces
+
+
+	 */
+
+	ns1 = &namespaces.NetNamespace{
+		Type:                 namespaces.NetNamespace_NSID,
+		Reference:            "ns1",
 	}
-	spd1 = &vpp.IPSecSPD{
-		Index: "1",
-		PolicyEntries: []*vpp_ipsec.SecurityPolicyDatabase_PolicyEntry{
-			{
-				Priority:   100,
-				IsOutbound: false,
-				Action:     0,
-				Protocol:   50,
-				SaIndex:    "10",
-			},
-		},
-	}
+
+
+
+
+	//sa10 = &vpp.IPSecSA{
+	//	Index:     "10",
+	//	Spi:       1001,
+	//	Protocol:  1,
+	//	CryptoAlg: 1,
+	//	CryptoKey: "4a506a794f574265564551694d653768",
+	//	IntegAlg:  2,
+	//	IntegKey:  "4339314b55523947594d6d3547666b45764e6a58",
+	//}
+	//spd1 = &vpp.IPSecSPD{
+	//	Index: "1",
+	//	PolicyEntries: []*vpp_ipsec.SecurityPolicyDatabase_PolicyEntry{
+	//		{
+	//			Priority:   100,
+	//			IsOutbound: false,
+	//			Action:     0,
+	//			Protocol:   50,
+	//			SaIndex:    "10",
+	//		},
+	//	},
+	//}
 	memif1 = &vpp.Interface{
 		Name:        "memif1",
 		Enabled:     true,
