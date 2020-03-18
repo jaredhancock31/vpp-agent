@@ -1,4 +1,4 @@
-package cntd
+package main
 
 import (
 	"context"
