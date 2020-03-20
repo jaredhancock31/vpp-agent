@@ -22,48 +22,9 @@ import (
 	vpp_intf "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
 )
 
-// TODO use the const values in the functions
+// TODO move the function values to constants
 const (
 	bdNetPrefix = "10.11.1."
-	bdNetMask   = "/24"
-
-	veth1LogicalName = "myVETH1"
-	veth1HostName    = "veth1"
-	veth1IPAddr      = bdNetPrefix + "1"
-	veth1HwAddr      = "66:66:66:66:66:66"
-
-	veth2LogicalName = "myVETH2"
-	veth2HostName    = "veth2"
-
-	afPacketLogicalName = "myAFPacket"
-	afPacketHwAddr      = "a7:35:45:55:65:75"
-
-	vppTapLogicalName = "myVPPTap"
-	vppTapHwAddr      = "b3:12:12:45:A7:B7"
-	vppTapVersion     = 2
-
-	linuxTapLogicalName = "myLinuxTAP"
-	linuxTapHostName    = "tap_to_vpp"
-	linuxTapIPAddr      = bdNetPrefix + "2"
-	linuxTapHwAddr      = "88:88:88:88:88:88"
-
-	mycroservice1 = "microservice1"
-	mycroservice2 = "microservice2"
-
-	bviLoopName   = "myLoopback1"
-	bviLoopIP     = bdNetPrefix + "3"
-	bviLoopHwAddr = "cd:cd:cd:cd:cd:cd"
-
-	loop2Name   = "myLoopback2"
-	loop2HwAddr = "ef:ef:ef:ef:ef:ef"
-
-	bdName                = "myBridgeDomain"
-	bdFlood               = true
-	bdUnknownUnicastFlood = true
-	bdForward             = true
-	bdLearn               = false /* Learning turned off, FIBs are needed for connectivity */
-	bdArpTermination      = true
-	bdMacAge              = 0
 )
 
 var exampleFinished = make(chan struct{})
