@@ -1,16 +1,5 @@
 <h1 align="center">VPP Agent</h1>
 
-- [CNTD Agent Quickstart](#cntd-agent-quickstart)
-  - [Client example](#cl)
-
-The VPP Agent is a Go implementation of a control/management plane for [VPP][vpp] based
-cloud-native [Virtual Network Functions][vnf] (VNFs). The VPP Agent is built on top of 
-[CN Infra][cn-infra], a framework for developing cloud-native VNFs (CNFs).
-
-The VPP Agent can be used as-is as a management/control agent for VNFs  based on off-the-shelf
-VPP (e.g. a VPP-based vswitch), or as a framework for developing management agents for VPP-based
-CNFs. An example of a custom VPP-based CNF is the [Contiv-VPP][contiv-vpp] vswitch.
-
 > Please note that the content of this repository is currently **WORK IN PROGRESS**!
 
 ## CNTD Agent Quickstart
@@ -18,6 +7,9 @@ CNFs. An example of a custom VPP-based CNF is the [Contiv-VPP][contiv-vpp] vswit
 CNTD Agent is a fork of VPP Agent. The primary difference is its use of an embedded BoltDB KV Store rather than
 etcd. The dev Dockerfile has been modified to start a VPP instance as well as the CNTD Agent. Config files for bolt,
 gRPC, VPP, and other plugins are in that same docker directory. 
+
+- [CNTD Agent Quickstart](#cntd-agent-quickstart)
+  - [Client example](#client-example)
 
 To get started, install the necessary tools for building and whatnot, such as Go, Docker, etc...
 
@@ -82,6 +74,14 @@ Note that the REST API is read-only, so we'll be sending configurations with a g
 - Delete interfaces with `sudo ip link del veth11`, etc.
 
 ## VPP Agent Quickstart
+
+The VPP Agent is a Go implementation of a control/management plane for [VPP][vpp] based
+cloud-native [Virtual Network Functions][vnf] (VNFs). The VPP Agent is built on top of 
+[CN Infra][cn-infra], a framework for developing cloud-native VNFs (CNFs).
+
+The VPP Agent can be used as-is as a management/control agent for VNFs  based on off-the-shelf
+VPP (e.g. a VPP-based vswitch), or as a framework for developing management agents for VPP-based
+CNFs. An example of a custom VPP-based CNF is the [Contiv-VPP][contiv-vpp] vswitch.
 
 For a quick start with the VPP Agent, you can use the pre-built Docker images on DockerHub
 that contain the VPP Agent and VPP: [ligato/vpp-agent][vpp-agent] (or for ARM64: [ligato/vpp-agent-arm64][vpp-agent-arm64]).
