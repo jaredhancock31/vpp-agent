@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	linux_namespace "go.ligato.io/vpp-agent/v3/proto/ligato/linux/namespace"
+	vpp_l2 "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/l2"
 	"log"
 	"net"
 	"sync"
@@ -20,7 +22,7 @@ import (
 	vpp_intf "go.ligato.io/vpp-agent/v3/proto/ligato/vpp/interfaces"
 )
 
-
+// TODO use the const values in the functions
 const (
 	bdNetPrefix = "10.11.1."
 	bdNetMask   = "/24"
@@ -69,9 +71,33 @@ var (
 	timeout = flag.Int("timeout", 20, "Timeout between applying of initial and modified configuration in seconds")
 	address    = flag.String("address", "172.17.0.1:9111", "address of GRPC server")
 	socketType = flag.String("socket-type", "tcp", "socket type [tcp, tcp4, tcp6, unix, unixpacket]")
-
+	cleanup = flag.Bool("cleanup", false, "cleanup all the stuff we made in the previous run")
 	dialTimeout = time.Second * 2
 )
+
+/***********************************************
+ * Here's what we want the end-result to be    *
+ *                                             *
+ *  +---------------------------------------+  *
+ *  |       +-- Bridge domain --+           |  *
+ *  |       |                   |           |  *
+ *  | +-----+------+      +-----+------+    |  *
+ *  | | afpacket1  |      | afpacket2  |    |  *
+ *  | +-----+------+      +-----+------+    |  *
+ *  |       |                   |           |  *
+ *  +-------+-------------------+-----------+  *
+ *          |                   |              *
+ *  +-------+--------+  +-------+--------+     *
+ *  | veth11         |  | veth21         |     *
+ *  +-------+--------+  +-------+--------+     *
+ *          |                   |              *
+ *  +-------+---------+ +-------+---------+    *
+ *  | veth12          | | veth22          |    *
+ *  | IP: 10.0.0.1/24 | | IP: 10.0.0.2/24 |    *
+ *  | NAMESPACE: ns1  | | NAMESPACE: ns2  |    *
+ *  +-----------------+ +-----------------+    *
+ ***********************************************/
+
 func main()  {
 	ep := &ExamplePlugin{}
 	ep.SetName("cntd-client")
@@ -110,8 +136,12 @@ func (p *ExamplePlugin) Init() (err error) {
 
 	client := configurator.NewConfiguratorServiceClient(p.conn)
 
-	// Apply initial VPP configuration.
-	go p.demonstrateClient(client)
+	if *cleanup {
+		p.Log.Info("Executing cleanup")
+	} else {
+		// Apply initial VPP configuration.
+		go p.demonstrateClient(client)
+	}
 
 	// Schedule reconfiguration.
 	var ctx context.Context
@@ -160,7 +190,7 @@ func (p *ExamplePlugin) demonstrateClient(client configurator.ConfiguratorServic
 	config := &configurator.Config{
 		LinuxConfig: &linux.ConfigData{
 			Interfaces: []*linux_intf.Interface{
-				initialVeth1(), initialVeth2(),
+				initialVeth11(), initialVeth12(),
 			},
 		},
 
@@ -178,9 +208,48 @@ func (p *ExamplePlugin) demonstrateClient(client configurator.ConfiguratorServic
 	}
 
 	time.Sleep(time.Second * 5)
+	p.Log.Infof("Requesting change..")
+
+	_, err = client.Update(context.Background(), &configurator.UpdateRequest{
+		Update: &configurator.Config{
+			LinuxConfig: &linux.ConfigData{
+				Interfaces: []*linux_intf.Interface{
+					modifiedVeth11(), modifiedVeth12(), veth21(), veth22(),
+				},
+			},
+			VppConfig: &vpp.ConfigData{
+				Interfaces: []*vpp_intf.Interface{ afPacket2() },
+			},
+		},
+	})
+
+	if err != nil {
+		log.Fatalln(err)
+	}
+
 }
 
-func initialVeth1() *linux_intf.Interface {
+/**
+TODO make a cleanup to get back to initial state
+ */
+//func (p *ExamplePlugin) tearDown(client configurator.ConfiguratorServiceClient)  {
+//	time.Sleep(time.Second * 2)
+//	p.Log.Infof("Requesting delete..")
+//
+//	ifaces = []*interfaces.Interface{v}
+//	_, err = client.Delete(context.Background(), &configurator.DeleteRequest{
+//		Delete: &configurator.Config{
+//			VppConfig: &vpp.ConfigData{
+//				Interfaces: initialVeth11(),
+//			},
+//		},
+//	})
+//}
+
+/**
+initial config
+ */
+func initialVeth11() *linux_intf.Interface {
 	return &linux_intf.Interface{
 		Name:    "veth11",
 		Type:    linux_intf.Interface_VETH,
@@ -191,7 +260,7 @@ func initialVeth1() *linux_intf.Interface {
 	}
 }
 
-func initialVeth2() *linux_intf.Interface {
+func initialVeth12() *linux_intf.Interface {
 	return &linux_intf.Interface{
 		Name:    "veth12",
 		Type:    linux_intf.Interface_VETH,
@@ -210,6 +279,101 @@ func afPacket1() *vpp_intf.Interface {
 		Link: &vpp_intf.Interface_Afpacket{
 			Afpacket: &vpp_intf.AfpacketLink{
 				HostIfName: "veth11",
+			},
+		},
+	}
+}
+
+/**
+modified config
+ */
+func modifiedVeth11() *linux_intf.Interface {
+	return &linux_intf.Interface{
+		Name:    "veth11",
+		Type:    linux_intf.Interface_VETH,
+		Enabled: true,
+		Link: &linux_intf.Interface_Veth{
+			Veth: &linux_intf.VethLink{PeerIfName: "veth12"},
+		},
+		Mtu: 1000,
+	}
+}
+
+func modifiedVeth12() *linux_intf.Interface {
+	return &linux_intf.Interface{
+		Name:    "veth12",
+		Type:    linux_intf.Interface_VETH,
+		Enabled: true,
+		Link: &linux_intf.Interface_Veth{
+			Veth: &linux_intf.VethLink{PeerIfName: "veth11"},
+		},
+		IpAddresses: []string{"10.0.0.1/24"},
+		PhysAddress: "D2:74:8C:12:67:D2",
+		Namespace: &linux_namespace.NetNamespace{
+			Reference: "ns1",
+			Type:      linux_namespace.NetNamespace_NSID,
+		},
+	}
+}
+
+func afPacket2() *vpp_intf.Interface {
+	return &vpp_intf.Interface{
+		Name:    "afpacket2",
+		Type:    vpp_intf.Interface_AF_PACKET,
+		Enabled: true,
+		Link: &vpp_intf.Interface_Afpacket{
+			Afpacket: &vpp_intf.AfpacketLink{
+				HostIfName: "veth21",
+			},
+		},
+	}
+}
+
+func veth21() *linux_intf.Interface {
+	return &linux_intf.Interface{
+		Name:    "veth21",
+		Type:    linux_intf.Interface_VETH,
+		Enabled: true,
+		Link: &linux_intf.Interface_Veth{
+			Veth: &linux_intf.VethLink{PeerIfName: "veth22"},
+		},
+	}
+}
+
+func veth22() *linux_intf.Interface {
+	return &linux_intf.Interface{
+		Name:    "veth22",
+		Type:    linux_intf.Interface_VETH,
+		Enabled: true,
+		Link: &linux_intf.Interface_Veth{
+			Veth: &linux_intf.VethLink{PeerIfName: "veth21"},
+		},
+		IpAddresses: []string{"10.0.0.2/24"},
+		PhysAddress: "92:C7:42:67:AB:CD",
+		Namespace: &linux_namespace.NetNamespace{
+			Reference: "ns2",
+			Type:      linux_namespace.NetNamespace_NSID,
+		},
+	}
+}
+
+
+func bridgeDomain() *vpp_l2.BridgeDomain {
+	return &vpp_l2.BridgeDomain{
+		Name:                "br1",
+		Flood:               true,
+		UnknownUnicastFlood: true,
+		Forward:             true,
+		Learn:               true,
+		ArpTermination:      false,
+		MacAge:              0, /* means disable aging */
+		Interfaces: []*vpp_l2.BridgeDomain_Interface{
+			{
+				Name:                    "afpacket1",
+				BridgedVirtualInterface: false,
+			}, {
+				Name:                    "afpacket2",
+				BridgedVirtualInterface: false,
 			},
 		},
 	}
