@@ -29,7 +29,7 @@ import (
 	"go.ligato.io/cn-infra/v2/datasync/resync"
 	"go.ligato.io/cn-infra/v2/logging"
 
-	"go.ligato.io/vpp-agent/v3/cmd/vpp-agent/app"
+	"go.ligato.io/vpp-agent/v3/cmd/cntd-agent/app"
 	"go.ligato.io/vpp-agent/v3/pkg/debug"
 	"go.ligato.io/vpp-agent/v3/pkg/version"
 )
@@ -69,7 +69,7 @@ func parseVersion() {
 func main() {
 	parseVersion()
 	fmt.Fprintf(os.Stderr, logo, version.App(), version.Version(), version.BuiltOn(), version.BuiltBy())
-	fmt.Fprintf(os.Stderr, "VPP AGENT")
+	fmt.Fprintf(os.Stderr, "CNTD AGENT")
 	if debug.IsEnabled() {
 		logging.DefaultLogger.SetLevel(logging.DebugLevel)
 		logging.DefaultLogger.Debug("DEBUG ENABLED")

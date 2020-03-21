@@ -8,6 +8,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 		inetutils-traceroute \
 		iproute2 \
 		iputils-ping \
+		curl \
 		# vpp requirements
 		ca-certificates \
 		libapr1 \
@@ -40,6 +41,7 @@ COPY \
 	etcd.conf \
 	grpc.conf \
 	supervisor.conf \
+	bolt.conf \
  /opt/vpp-agent/dev/
 
 COPY vpp.conf /etc/vpp/vpp.conf
@@ -49,6 +51,7 @@ COPY init_hook.sh /usr/bin/
 COPY --from=devimg \
     /go/bin/agentctl \
     /go/bin/vpp-agent \
+    /go/bin/cntd-agent \
     /go/bin/vpp-agent-init \
  /bin/
 
@@ -56,4 +59,7 @@ ENV SUPERVISOR_CONFIG=/opt/vpp-agent/dev/supervisor.conf
 
 CMD rm -f /dev/shm/db /dev/shm/global_vm /dev/shm/vpe-api && \
 	mkdir -p /run/vpp && \
-	exec vpp-agent-init
+	echo "starting vpp" && \
+  /usr/bin/vpp -c /etc/vpp/vpp.conf & \
+  echo "starting cntd-agent" && \
+	exec cntd-agent --bolt-config=/opt/vpp-agent/dev/bolt.conf

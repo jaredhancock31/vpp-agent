@@ -64,6 +64,9 @@ func (opts *ClientOptions) InstallFlags(flags *pflag.FlagSet) {
 	_ = viper.BindPFlag("etcd-endpoints", flags.Lookup("etcd-endpoints"))
 	_ = viper.BindEnv("etcd-endpoints", "ETCD_ENDPOINTS")
 
+	flags.StringP("bolt", "b", "/tmp/bolt.db", "path to bolt db file")
+	_ = viper.BindPFlag("bolt", flags.Lookup("bolt"))
+
 	flags.String("http-basic-auth", "", "Basic auth for HTTP connection in form \"user:pass\"")
 	_ = viper.BindPFlag("http-basic-auth", flags.Lookup("http-basic-auth"))
 	_ = viper.BindEnv("http-basic-auth", "AGENTCTL_HTTP_BASIC_AUTH")

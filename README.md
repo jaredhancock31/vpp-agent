@@ -1,5 +1,80 @@
 <h1 align="center">VPP Agent</h1>
 
+> Please note that the content of this repository is currently **WORK IN PROGRESS**!
+
+## CNTD Agent Quickstart
+
+CNTD Agent is a fork of VPP Agent. The primary difference is its use of an embedded BoltDB KV Store rather than
+etcd. The dev Dockerfile has been modified to start a VPP instance as well as the CNTD Agent. Config files for bolt,
+gRPC, VPP, and other plugins are in that same docker directory. 
+
+- [CNTD Agent Quickstart](#cntd-agent-quickstart)
+  - [Client example](#client-example)
+
+To get started, install the necessary tools for building and whatnot, such as Go, Docker, etc...
+
+```shell script
+sudo apt-get update
+sudo apt-get install build-essential
+wget https://dl.google.com/go/go1.14.linux-amd64.tar.gz
+sudo tar -C /usr/local -xzf go1.14.linux-amd64.tar.gz
+sudo chown -R $USER:$USER /usr/local/go
+export PATH=$PATH:/usr/local/go/bin
+sudo apt install make
+```
+
+Clone this repository, and build
+```shell script
+git clone https://github.com/jaredhancock31/vpp-agent.git
+cd vpp-agent
+make build
+```
+
+If you want to just rebuild the CNTD Agent image you can do
+```shell script
+# build both dev and prod
+make images 
+
+# dev only
+make dev-image
+
+# prod only 
+make prod-image
+```
+
+Now, let's run the image. Note that we want our agent to configure the host network, so you'll make it `privileged` without
+the typical docker bridge. 
+
+```shell script
+sudo docker run -it --name cntd-agent --privileged --network host --rm dev_vpp_agent
+``` 
+
+### Client example
+> This is still a work-in-progress. The idea is two have two namespaces with veth pairs and a bridge domain. 
+
+Note that the REST API is read-only, so we'll be sending configurations with a gRPC client, [found here](examples/cntd/main.go).
+
+- In a separate terminal (still on the master):
+
+    ```
+    cd examples/cntd
+    go run main.go
+    ```
+
+    Several flags can be set:
+    * `-address=<address>` - for grpc server address/socket-file (otherwise localhost will be used)
+    * `-socket-type=<type>` - options are tcp, tcp4, tcp6, unix or unixpacket. Defaults to tcp if not set
+    * `request-period=<time_in_sec>` - time between grpc requests
+    
+    The example prints all received VPP notifications. 
+
+- You can hit the REST API to get all interfaces with `curl -X GET http://localhost:9191/dump/vpp/v2/interfaces`. Obviously, you're 
+ on the host already so you can just use things like `ethtool` and `ifconfig` as well. Whatever floats your boat.
+ 
+- Delete interfaces with `sudo ip link del veth11`, etc.
+
+## VPP Agent Quickstart
+
 The VPP Agent is a Go implementation of a control/management plane for [VPP][vpp] based
 cloud-native [Virtual Network Functions][vnf] (VNFs). The VPP Agent is built on top of 
 [CN Infra][cn-infra], a framework for developing cloud-native VNFs (CNFs).
@@ -7,43 +82,6 @@ cloud-native [Virtual Network Functions][vnf] (VNFs). The VPP Agent is built on 
 The VPP Agent can be used as-is as a management/control agent for VNFs  based on off-the-shelf
 VPP (e.g. a VPP-based vswitch), or as a framework for developing management agents for VPP-based
 CNFs. An example of a custom VPP-based CNF is the [Contiv-VPP][contiv-vpp] vswitch.
-
-> Please note that the content of this repository is currently **WORK IN PROGRESS**!
-
-## Status
-
-[![CI](https://github.com/ligato/vpp-agent/workflows/CI/badge.svg)](https://github.com/ligato/vpp-agent/actions?query=workflow%3A%22CI%22)
-[![Docker](https://github.com/ligato/vpp-agent/workflows/Docker/badge.svg)](https://github.com/ligato/vpp-agent/actions?query=workflow%3A%22Docker%22)
-[![Build Status](https://travis-ci.com/ligato/vpp-agent.svg?branch=master)](https://travis-ci.com/ligato/vpp-agent)
-[![Coverage Status](https://coveralls.io/repos/github/ligato/vpp-agent/badge.svg?branch=master)](https://coveralls.io/github/ligato/vpp-agent?branch=master)
-[![Go Report Card](https://goreportcard.com/badge/github.com/ligato/vpp-agent)](https://goreportcard.com/report/github.com/ligato/vpp-agent)
-
-### Releases
-
-|Release|Release Date|Info|
-|---|:---:|---|
-|[![stable](https://img.shields.io/github/release/ligato/vpp-agent.svg?label=release&logo=github)](https://github.com/ligato/vpp-agent/releases/latest)|![Release date](https://img.shields.io/github/release-date/ligato/vpp-agent.svg?label=)|latest release|
-
-Have a look at the [release notes](CHANGELOG.md) for a complete list of changes.
-
-### Branches
-
-|Branch|Info|Last Commit|
-|---|---|:---:|
-|[![master](https://img.shields.io/badge/branch-master-green.svg?logo=git&logoColor=white)](https://github.com/ligato/vpp-agent/tree/master)| **has switched to [v3](https://github.com/ligato/vpp-agent/blob/master/CHANGELOG.md#v300)** :warning:|![GitHub last commit (branch)](https://img.shields.io/github/last-commit/ligato/vpp-agent/master.svg?label=)|
-|[![dev](https://img.shields.io/badge/branch-dev-lightgray.svg?logo=git&logoColor=white)](https://github.com/ligato/vpp-agent/tree/dev)| has been **DEPRECATED** |![GitHub last commit (branch)](https://img.shields.io/github/last-commit/ligato/vpp-agent/dev.svg?label=)|
-|[![v2](https://img.shields.io/badge/branch-v2-lightblue.svg?logo=git&logoColor=white)](https://github.com/ligato/vpp-agent/tree/v2)| provides **legacy v2** |![GitHub last commit (branch)](https://img.shields.io/github/last-commit/ligato/vpp-agent/v2.svg?label=)|
-
-All development is done against **master** branch.
-
-### Images
-
-|Image|Image Size/Layers||Info|
-|---|:---:|:---:|---|
-|[![ligato/vpp-agent](https://img.shields.io/badge/image-ligato/vpp--agent-blue.svg?logo=docker&logoColor=white)](https://cloud.docker.com/u/ligato/repository/docker/ligato/vpp-agent)|![MicroBadger Size](https://img.shields.io/microbadger/image-size/ligato/vpp-agent.svg) ![MicroBadger Layers](https://img.shields.io/microbadger/layers/ligato/vpp-agent.svg)|![pulls](https://img.shields.io/docker/pulls/ligato/vpp-agent.svg)|with minimal footprint|
-|[![ligato/dev-vpp-agent](https://img.shields.io/badge/image-ligato/dev--vpp--agent-blue.svg?logo=docker&logoColor=white)](https://cloud.docker.com/u/ligato/repository/docker/ligato/dev-vpp-agent)|![MicroBadger Size](https://img.shields.io/microbadger/image-size/ligato/dev-vpp-agent.svg) ![MicroBadger Layers](https://img.shields.io/microbadger/layers/ligato/dev-vpp-agent.svg)|![pulls](https://img.shields.io/docker/pulls/ligato/dev-vpp-agent.svg)|prepared for developers|
-
-## Quickstart
 
 For a quick start with the VPP Agent, you can use the pre-built Docker images on DockerHub
 that contain the VPP Agent and VPP: [ligato/vpp-agent][vpp-agent] (or for ARM64: [ligato/vpp-agent-arm64][vpp-agent-arm64]).

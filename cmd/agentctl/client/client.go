@@ -179,6 +179,9 @@ func (c *Client) HTTPClient() *http.Client {
 
 // KVDBClient returns configured KVDB client.
 func (c *Client) KVDBClient() (KVDBAPIClient, error) {
+
+	// TODO make this kvStore agnostic
+
 	kvdb, err := connectEtcd(c.kvdbEndpoints, c.kvdbDialTimeout, c.kvdbTLS)
 	if err != nil {
 		return nil, fmt.Errorf("connecting to Etcd failed: %v", err)
